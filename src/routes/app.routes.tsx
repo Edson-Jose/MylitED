@@ -12,7 +12,7 @@ import Login from '../screens/Login';
 import Home from '../screens/Home';
 import Notes from '../screens/Notes';
 import Profile from '../screens/Profile';
-import Schedules from '../screens/Schedules'; // 🌟 Conexão corrigida!
+import Schedules from '../screens/Schedules'; //  Conexão corrigida!
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
