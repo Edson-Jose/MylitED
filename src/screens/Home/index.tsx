@@ -6,7 +6,7 @@ import { useAuthStore } from '../../hooks/useAuthStore';
 import { Task, TaskPriority } from '../../types/task';
 
 export default function Home() {
-  // 🌟 Chamando as funções oficiais da Store que possuem o gatilho do AsyncStorage
+  //  Chamando as funções oficiais da Store que possuem o gatilho do AsyncStorage
   const { 
     user, columns, tasks, addColumn, deleteColumn, addTask, moveTask, updateTask, deleteTask, addNote, addSchedule 
   } = useAuthStore();
@@ -124,7 +124,7 @@ export default function Home() {
     Alert.alert('Sucesso', 'Nota gravada no dispositivo e enviada para a aba de Notas!');
   };
 
-  // 🌟 SALVAMENTO DE AGENDA CORRIGIDO (Aciona o set() do Zustand para salvar no celular)
+  //  SALVAMENTO DE AGENDA CORRIGIDO (Aciona o set() do Zustand para salvar no celular)
   const handleQuickScheduleSave = () => {
     if (!eventTitle.trim() || !eventTime.trim()) return;
     const finalEventDate = eventDate.trim() || new Date().toLocaleDateString('pt-BR');
