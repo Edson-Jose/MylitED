@@ -29,7 +29,7 @@ function MainTabs() {
         // Cor do ícone e do texto quando apagado
         tabBarInactiveTintColor: theme.colors.placeholder, 
         
-        // 🌟 CUSTOMIZAÇÃO DA BARRA INSPIRADA NO WHATSAPP:
+        //  CUSTOMIZAÇÃO DA BARRA:
         tabBarStyle: {
           backgroundColor: theme.colors.surface, // Fundo escuro/marinho do seu tema
           borderTopWidth: 1,
@@ -75,7 +75,7 @@ function MainTabs() {
         }}
       />
 
-      {/* 🌟 ABA DA AGENDA INTEGRADA COM O COMPONENTE SCHEDULES: */}
+      {/* ABA DA AGENDA INTEGRADA COM O COMPONENTE SCHEDULES: */}
       <Tab.Screen 
         name="Agenda" 
         component={Schedules} // Chamando o componente real do seu arquivo
