@@ -18,7 +18,7 @@ declare module 'styled-components/native' {
   }
 }
 
-// ☀️ PALETA MODO CLARO (Trello Clássico)
+//  PALETA MODO CLARO (Trello Clássico)
 export const lightTheme: DefaultTheme = {
   colors: {
     primary: '#0079BF',      // Azul Trello original
@@ -34,7 +34,7 @@ export const lightTheme: DefaultTheme = {
   },
 };
 
-// 🌙 PALETA MODO ESCURO (Customizado: Marinho Tricoline 100% Algodão Lisa)
+//  PALETA MODO ESCURO (Customizado: Marinho Tricoline 100% Algodão Lisa)
 export const darkTheme: DefaultTheme = {
   colors: {
     primary: '#579DFF',      // Azul celeste brilhante para dar destaque no marinho
