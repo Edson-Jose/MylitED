@@ -1,24 +1,28 @@
 import React, { useState } from 'react';
-import { FlatList, Modal, Alert, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Image } from 'react-native'; 
+import Constants from 'expo-constants';
+import { FlatList, Modal, Alert, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Image, View, StatusBar } from 'react-native'; 
 import styled from 'styled-components/native';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker'; 
 import { useAuthStore } from '../../hooks/useAuthStore';
 import { Task, TaskPriority } from '../../types/task';
 
 export default function Home() {
-  //  Chamando as funções oficiais da Store que possuem o gatilho do AsyncStorage
   const { 
     user, columns, tasks, addColumn, deleteColumn, addTask, moveTask, updateTask, deleteTask, addNote, addSchedule 
   } = useAuthStore();
 
-  // Modais de controle
   const [columnModalVisible, setColumnModalVisible] = useState(false);
   const [taskModalVisible, setTaskModalVisible] = useState(false);
   const [editTaskModalVisible, setEditTaskModalVisible] = useState(false);
   const [noteModalVisible, setNoteModalVisible] = useState(false);
   const [scheduleModalVisible, setScheduleModalVisible] = useState(false);
 
-  // Estados dos formulários de criação
+  const [showTaskDatePicker, setShowTaskDatePicker] = useState(false);
+  const [showScheduleDatePicker, setShowScheduleDatePicker] = useState(false);
+  const [taskDateObject, setTaskDateObject] = useState(new Date());
+  const [scheduleDateObject, setScheduleDateObject] = useState(new Date());
+
   const [newColumnName, setNewColumnName] = useState('');
   const [selectedColumnForTask, setSelectedColumnForTask] = useState('');
   const [taskTitle, setTaskTitle] = useState('');
@@ -26,7 +30,6 @@ export default function Home() {
   const [taskCategory, setTaskCategory] = useState('');
   const [taskDueDate, setTaskDueDate] = useState('');
 
-  // Estados do formulário de EDIÇÃO
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editDesc, setEditDesc] = useState('');
@@ -34,7 +37,6 @@ export default function Home() {
   const [editDueDate, setEditDueDate] = useState('');
   const [editPriority, setEditPriority] = useState<TaskPriority>('Baixa');
 
-  // Estados de notas e agenda rápidas
   const [noteTitle, setNoteTitle] = useState('');
   const [noteContent, setNoteContent] = useState('');
   const [eventTitle, setEventTitle] = useState('');
@@ -53,14 +55,20 @@ export default function Home() {
     if (!taskTitle.trim()) return;
     addTask(taskTitle, taskDesc, taskCategory || 'Geral', selectedColumnForTask);
     const finalDate = taskDueDate.trim() || 'Sem prazo';
-    const lastInserted = tasks[tasks.length - 1];
-    if (lastInserted) {
-      updateTask(lastInserted.id, { date: finalDate });
-    }
+    
+    setTimeout(() => {
+      const state = useAuthStore.getState();
+      const lastInserted = state.tasks[state.tasks.length - 1];
+      if (lastInserted) {
+        useAuthStore.getState().updateTask(lastInserted.id, { date: finalDate });
+      }
+    }, 100);
+
     setTaskTitle('');
     setTaskDesc('');
     setTaskCategory('');
     setTaskDueDate('');
+    setTaskDateObject(new Date());
     setTaskModalVisible(false);
   };
 
@@ -89,12 +97,9 @@ export default function Home() {
 
   const handleDeleteTaskPrompt = () => {
     if (!selectedTask) return;
-    Alert.alert('Excluir Cartão', `Deseja realmente apagar o cartão "${selectedTask.title}"?`, [
+    Alert.alert('Excluir Cartão', `Deseja apagar "${selectedTask.title}"?`, [
       { text: 'Cancelar', style: 'cancel' },
-      { 
-        text: 'Excluir', 
-        style: 'destructive', 
-        onPress: () => {
+      { text: 'Excluir', style: 'destructive', onPress: () => {
           deleteTask(selectedTask.id);
           setEditTaskModalVisible(false);
           setSelectedTask(null);
@@ -112,19 +117,15 @@ export default function Home() {
     }
   };
 
-  //  SALVAMENTO DE NOTA CORRIGIDO (Aciona o set() do Zustand para salvar no celular)
   const handleQuickNoteSave = () => {
     if (!noteTitle.trim() || !noteContent.trim()) return;
-    
     addNote(noteTitle.trim(), noteContent.trim(), '#FFF9DB');
-    
     setNoteTitle('');
     setNoteContent('');
     setNoteModalVisible(false);
     Alert.alert('Sucesso', 'Nota gravada no dispositivo e enviada para a aba de Notas!');
   };
 
-  //  SALVAMENTO DE AGENDA CORRIGIDO (Aciona o set() do Zustand para salvar no celular)
   const handleQuickScheduleSave = () => {
     if (!eventTitle.trim() || !eventTime.trim()) return;
     const finalEventDate = eventDate.trim() || new Date().toLocaleDateString('pt-BR');
@@ -135,13 +136,13 @@ export default function Home() {
     setEventDesc('');
     setEventTime('');
     setEventDate('');
+    setScheduleDateObject(new Date());
     setScheduleModalVisible(false);
     Alert.alert('Sucesso', 'Compromisso gravado no dispositivo e enviado para a aba Agenda!');
   };
 
   return (
     <Container>
-      {/* HEADER INTEGRADO COM A FOTO DE PERFIL GLOBAL */}
       <HeaderView>
         <HeaderLeft>
           <WelcomeText>Olá,</WelcomeText>
@@ -179,15 +180,14 @@ export default function Home() {
           </BoardHeaderRow>
         </PaddingWrapper>
 
-        {/* COLUNAS KANBAN */}
         <FlatList
           data={columns}
           keyExtractor={(item) => item}
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingLeft: 20, paddingRight: 20, paddingTop: 10, paddingBottom: 20 }}
+          contentContainerStyle={{ paddingLeft: 20, paddingRight: 20, paddingTop: 10, paddingBottom: 110 }}
           renderItem={({ item: columnName }) => {
-            const columnTasks = tasks.filter(t => t.status === columnName);
+            const columnTasks = tasks.filter((t: any) => t.status === columnName);
             return (
               <ColumnContainer>
                 <ColumnHeader>
@@ -260,14 +260,45 @@ export default function Home() {
       <Modal visible={taskModalVisible} animationType="slide" transparent>
         <ModalBg style={{ justifyContent: 'flex-end' }}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ width: '100%' }}>
-            <ModalBox style={{ width: '100%', borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}>
+            <ModalBox style={{ width: '100%', borderBottomLeftRadius: 0, borderBottomRightRadius: 0, maxHeight: '90%' }}>
               <ModalTitle>Novo Cartão em "{selectedColumnForTask}"</ModalTitle>
-              <Input placeholder="Título da tarefa" placeholderTextColor="#97A0AF" value={taskTitle} onChangeText={setTaskTitle} />
-              <Input placeholder="Descrição" placeholderTextColor="#97A0AF" value={taskDesc} onChangeText={setTaskDesc} />
-              <Input placeholder="Categoria (Ex: TI, Faculdade)" placeholderTextColor="#97A0AF" value={taskCategory} onChangeText={setTaskCategory} />
-              <Input placeholder="Data Limite (Ex: 25/05/2026)" placeholderTextColor="#97A0AF" value={taskDueDate} onChangeText={setTaskDueDate} />
-              <SaveBtn onPress={handleCreateTask} style={{ backgroundColor: '#0079BF' }}><BtnTxt style={{ color: '#FFF' }}>Criar Cartão</BtnTxt></SaveBtn>
-              <CancelBtn onPress={() => setTaskModalVisible(false)}><BtnTxt style={{ color: '#EB5A46' }}>Fechar</BtnTxt></CancelBtn>
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <Input placeholder="Título da tarefa" placeholderTextColor="#97A0AF" value={taskTitle} onChangeText={setTaskTitle} />
+                <Input placeholder="Descrição" placeholderTextColor="#97A0AF" value={taskDesc} onChangeText={setTaskDesc} />
+                <Input placeholder="Categoria (Ex: TI, Faculdade)" placeholderTextColor="#97A0AF" value={taskCategory} onChangeText={setTaskCategory} />
+                
+                <LabelText>Prazo Final</LabelText>
+                <TouchableOpacity activeOpacity={0.7} onPress={() => setShowTaskDatePicker(true)}>
+                  <Input editable={false} pointerEvents="none" placeholder="Toque para selecionar a data" placeholderTextColor="#97A0AF" value={taskDueDate} />
+                </TouchableOpacity>
+
+                {/* CALENDÁRIO HÍBRIDO ADAPTADO PARA APARECER NO IOS */}
+                {showTaskDatePicker && (
+                  <View style={Platform.OS === 'ios' ? { backgroundColor: '#FAFBFC', borderRadius: 8, marginTop: 10, padding: 5, height: 260, borderWidth: 1, borderColor: '#DFE1E6' } : {}}>
+                    <DateTimePicker 
+                      value={taskDateObject} 
+                      mode="date" 
+                      display={Platform.OS === 'ios' ? 'spinner' : 'default'} 
+                      textColor="#000000"
+                      onChange={(event, selectedDate) => {
+                        if (Platform.OS === 'android') setShowTaskDatePicker(false);
+                        if (selectedDate) {
+                          setTaskDateObject(selectedDate);
+                          setTaskDueDate(selectedDate.toLocaleDateString('pt-BR'));
+                        }
+                      }} 
+                    />
+                    {Platform.OS === 'ios' && (
+                      <TouchableOpacity onPress={() => setShowTaskDatePicker(false)} style={{ padding: 12, alignItems: 'center', backgroundColor: '#0079BF', borderRadius: 6, margin: 5 }}>
+                        <BtnTxt style={{ color: '#FFF' }}>Confirmar Data</BtnTxt>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                )}
+
+                <SaveBtn onPress={handleCreateTask} style={{ backgroundColor: '#0079BF', marginTop: 15 }}><BtnTxt style={{ color: '#FFF' }}>Criar Cartão</BtnTxt></SaveBtn>
+                <CancelBtn onPress={() => setTaskModalVisible(false)}><BtnTxt style={{ color: '#EB5A46' }}>Fechar</BtnTxt></CancelBtn>
+              </ScrollView>
             </ModalBox>
           </KeyboardAvoidingView>
         </ModalBg>
@@ -277,7 +308,7 @@ export default function Home() {
       <Modal visible={editTaskModalVisible} animationType="slide" transparent>
         <ModalBg style={{ justifyContent: 'flex-end' }}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ width: '100%' }}>
-            <ModalBox style={{ width: '100%', borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}>
+            <ModalBox style={{ width: '100%', borderBottomLeftRadius: 0, borderBottomRightRadius: 0, maxHeight: '90%' }}>
               <ModalTitleRow style={{ marginBottom: 12 }}>
                 <ModalTitle style={{ marginBottom: 0 }}>Visualizar / Editar Cartão</ModalTitle>
                 <TouchableOpacity onPress={handleDeleteTaskPrompt}>
@@ -285,37 +316,30 @@ export default function Home() {
                 </TouchableOpacity>
               </ModalTitleRow>
               
-              <Input placeholder="Título da tarefa" placeholderTextColor="#97A0AF" value={editTitle} onChangeText={setEditTitle} />
-              <Input placeholder="Descrição" placeholderTextColor="#97A0AF" value={editDesc} onChangeText={setEditDesc} />
-              <Input placeholder="Categoria" placeholderTextColor="#97A0AF" value={editCategory} onChangeText={setEditCategory} />
-              <Input placeholder="Data Limite" placeholderTextColor="#97A0AF" value={editDueDate} onChangeText={setEditDueDate} />
-              
-              <LabelText>Definir Prioridade:</LabelText>
-              <PrioritySelectorRow>
-                <PriorityOptionBtn 
-                  onPress={() => setEditPriority('Baixa')} 
-                  style={{ backgroundColor: editPriority === 'Baixa' ? '#E2FCEF' : '#F4F5F7', borderColor: '#61BD4F', borderWidth: editPriority === 'Baixa' ? 1.5 : 0 }}
-                >
-                  <PriorityOptionText style={{ color: '#61BD4F', fontWeight: editPriority === 'Baixa' ? 'bold' : 'normal' }}>Baixa</PriorityOptionText>
-                </PriorityOptionBtn>
-
-                <PriorityOptionBtn 
-                  onPress={() => setEditPriority('Média')} 
-                  style={{ backgroundColor: editPriority === 'Média' ? '#FFF9DB' : '#F4F5F7', borderColor: '#B59E00', borderWidth: editPriority === 'Média' ? 1.5 : 0 }}
-                >
-                  <PriorityOptionText style={{ color: '#B59E00', fontWeight: editPriority === 'Média' ? 'bold' : 'normal' }}>Média</PriorityOptionText>
-                </PriorityOptionBtn>
-
-                <PriorityOptionBtn 
-                  onPress={() => setEditPriority('Alta')} 
-                  style={{ backgroundColor: editPriority === 'Alta' ? '#FCE8E6' : '#F4F5F7', borderColor: '#EB5A46', borderWidth: editPriority === 'Alta' ? 1.5 : 0 }}
-                >
-                  <PriorityOptionText style={{ color: '#EB5A46', fontWeight: editPriority === 'Alta' ? 'bold' : 'normal' }}>Alta</PriorityOptionText>
-                </PriorityOptionBtn>
-              </PrioritySelectorRow>
-              
-              <SaveBtn onPress={handleSaveEditedTask} style={{ backgroundColor: '#61BD4F', marginTop: 15 }}><BtnTxt style={{ color: '#FFF' }}>Salvar Alterações</BtnTxt></SaveBtn>
-              <CancelBtn onPress={() => { setEditTaskModalVisible(false); setSelectedTask(null); }}><BtnTxt style={{ color: '#5E6C84' }}>Voltar</BtnTxt></CancelBtn>
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <Input placeholder="Título da tarefa" placeholderTextColor="#97A0AF" value={editTitle} onChangeText={setEditTitle} />
+                <Input placeholder="Descrição" placeholderTextColor="#97A0AF" value={editDesc} onChangeText={setEditDesc} />
+                <Input placeholder="Categoria" placeholderTextColor="#97A0AF" value={editCategory} onChangeText={setEditCategory} />
+                <Input placeholder="Data Limite" placeholderTextColor="#97A0AF" value={editDueDate} onChangeText={setEditDueDate} />
+                
+                <LabelText>Definir Prioridade:</LabelText>
+                <PrioritySelectorRow>
+                  <PriorityOptionBtn onPress={() => setEditPriority('Baixa')} style={{ backgroundColor: editPriority === 'Baixa' ? '#E2FCEF' : '#F4F5F7', borderColor: '#61BD4F', borderWidth: editPriority === 'Baixa' ? 1.5 : 0 }}>
+                    <PriorityOptionText style={{ color: '#61BD4F', fontWeight: editPriority === 'Baixa' ? 'bold' : 'normal' }}>Baixa</PriorityOptionText>
+                  </PriorityOptionBtn>
+                  <PriorityOptionBtn onPress={() => setEditPriority('Média')} style={{ backgroundColor: editPriority === 'Média' ? '#FFF9DB' : '#F4F5F7', borderColor: '#B59E00', borderWidth: editPriority === 'Média' ? 1.5 : 0 }}>
+                    <PriorityOptionText style={{ color: '#B59E00', fontWeight: editPriority === 'Média' ? 'bold' : 'normal' }}>Média</PriorityOptionText>
+                  </PriorityOptionBtn>
+                  <PriorityOptionBtn onPress={() => setEditPriority('Alta')} style={{ backgroundColor: editPriority === 'Alta' ? '#FCE8E6' : '#F4F5F7', borderColor: '#EB5A46', borderWidth: editPriority === 'Alta' ? 1.5 : 0 }}>
+                    <PriorityOptionText style={{ color: '#EB5A46', fontWeight: editPriority === 'Alta' ? 'bold' : 'normal' }}>Alta</PriorityOptionText>
+                  </PriorityOptionBtn>
+                </PrioritySelectorRow>
+                
+                <View style={{ flexDirection: 'row', gap: 8, marginTop: 15 }}>
+                  <CancelBtn onPress={() => { setEditTaskModalVisible(false); setSelectedTask(null); }} style={{ flex: 1 }}><BtnTxt style={{ color: '#5E6C84' }}>Voltar</BtnTxt></CancelBtn>
+                  <SaveBtn onPress={handleSaveEditedTask} style={{ backgroundColor: '#61BD4F', flex: 1, marginTop: 5 }}><BtnTxt style={{ color: '#FFF' }}>Salvar</BtnTxt></SaveBtn>
+                </View>
+              </ScrollView>
             </ModalBox>
           </KeyboardAvoidingView>
         </ModalBg>
@@ -340,31 +364,85 @@ export default function Home() {
       <Modal visible={scheduleModalVisible} animationType="slide" transparent>
         <ModalBg style={{ justifyContent: 'flex-end' }}>
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ width: '100%' }}>
-            <ModalBox style={{ width: '100%' }}>
+            <ModalBox style={{ width: '100%', maxHeight: '90%' }}>
               <ModalTitle>Agendar Evento</ModalTitle>
-              <Input placeholder="O que vai fazer?" placeholderTextColor="#97A0AF" value={eventTitle} onChangeText={setEventTitle} />
-              <Input placeholder="Data (Ex: 28/05/2026)" placeholderTextColor="#97A0AF" value={eventDate} onChangeText={setEventDate} />
-              <Input placeholder="Horário (Ex: 15:00)" placeholderTextColor="#97A0AF" value={eventTime} onChangeText={setEventTime} />
-              <Input placeholder="Descrição..." placeholderTextColor="#97A0AF" value={eventDesc} onChangeText={setEventDesc} />
-              <SaveBtn onPress={handleQuickScheduleSave} style={{ backgroundColor: '#579DFF' }}><BtnTxt style={{ color: '#FFF' }}>Agendar</BtnTxt></SaveBtn>
-              <CancelBtn onPress={() => setScheduleModalVisible(false)}><BtnTxt style={{ color: '#EB5A46' }}>Fechar</BtnTxt></CancelBtn>
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <Input placeholder="O que vai fazer?" placeholderTextColor="#97A0AF" value={eventTitle} onChangeText={setEventTitle} />
+                <Input placeholder="Horário (Ex: 15:00)" placeholderTextColor="#97A0AF" value={eventTime} onChangeText={setEventTime} />
+                <Input placeholder="Descrição..." placeholderTextColor="#97A0AF" value={eventDesc} onChangeText={setEventDesc} />
+                
+                <LabelText>Data do Evento</LabelText>
+                <TouchableOpacity activeOpacity={0.7} onPress={() => setShowScheduleDatePicker(true)}>
+                  <Input editable={false} pointerEvents="none" placeholder="Toque para selecionar a data" placeholderTextColor="#97A0AF" value={eventDate} />
+                </TouchableOpacity>
+
+                {/* CALENDÁRIO HÍBRIDO ADAPTADO PARA APARECER NO IOS */}
+                {showScheduleDatePicker && (
+                  <View style={Platform.OS === 'ios' ? { backgroundColor: '#FAFBFC', borderRadius: 8, marginTop: 10, padding: 5, height: 260, borderWidth: 1, borderColor: '#DFE1E6' } : {}}>
+                    <DateTimePicker 
+                      value={scheduleDateObject} 
+                      mode="date" 
+                      display={Platform.OS === 'ios' ? 'spinner' : 'default'} 
+                      textColor="#000000"
+                      onChange={(event, selectedDate) => {
+                        if (Platform.OS === 'android') setShowScheduleDatePicker(false);
+                        if (selectedDate) {
+                          setScheduleDateObject(selectedDate);
+                          setEventDate(selectedDate.toLocaleDateString('pt-BR'));
+                        }
+                      }} 
+                    />
+                    {Platform.OS === 'ios' && (
+                      <TouchableOpacity onPress={() => setShowScheduleDatePicker(false)} style={{ padding: 12, alignItems: 'center', backgroundColor: '#579DFF', borderRadius: 6, margin: 5 }}>
+                        <BtnTxt style={{ color: '#FFF' }}>Confirmar Data</BtnTxt>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                )}
+
+                <SaveBtn onPress={handleQuickScheduleSave} style={{ backgroundColor: '#579DFF', marginTop: 15 }}><BtnTxt style={{ color: '#FFF' }}>Agendar</BtnTxt></SaveBtn>
+                <CancelBtn onPress={() => setScheduleModalVisible(false)}><BtnTxt style={{ color: '#EB5A46' }}>Fechar</BtnTxt></CancelBtn>
+              </ScrollView>
             </ModalBox>
           </KeyboardAvoidingView>
         </ModalBg>
       </Modal>
+
     </Container>
   );
 }
 
-// --- SEUS ESTILOS KANBAN ORIGINAIS MANTIDOS MANTIDOS INTACTOS ---
-const Container = styled.SafeAreaView` flex: 1; background-color: ${props => props.theme.colors.background}; `;
-const PaddingWrapper = styled.View` padding-horizontal: 20px; `;
-const HeaderView = styled.View` height: 75px; background-color: ${props => props.theme.colors.surface}; flex-direction: row; justify-content: space-between; align-items: center; padding-horizontal: 20px; border-bottom-width: 1px; border-color: ${props => props.theme.colors.border}; margin-bottom: 15px; `;
+// --- ESTILOS ---
+const Container = styled.View` 
+  flex: 1; 
+  background-color: ${props => props.theme.colors.background}; 
+  
+  /* 🌟 ENGENHARIA DE TOPO PERFEITA PARA ANDROID E IPHONE */
+  padding-top: ${Platform.OS === 'ios' 
+    ? `${Constants.statusBarHeight}px` 
+    : `${StatusBar.currentHeight}px`
+  };
+`;
+
+const HeaderView = styled.View` 
+  height: ${Platform.OS === 'ios' ? '85px' : '75px'}; 
+  background-color: ${props => props.theme.colors.surface}; 
+  flex-direction: row; 
+  justify-content: space-between; 
+  align-items: center; 
+  padding-horizontal: 20px; 
+  border-bottom-width: 1px; 
+  border-color: ${props => props.theme.colors.border}; 
+  margin-bottom: 15px; 
+  padding-top: ${Platform.OS === 'ios' ? '15px' : '0px'}; 
+`;
+
 const HeaderLeft = styled.View``;
 const WelcomeText = styled.Text` font-size: 13px; color: ${props => props.theme.colors.textSecondary}; `;
 const UserText = styled.Text` font-size: 17px; font-weight: bold; color: ${props => props.theme.colors.textPrimary}; `;
 const AvatarCircle = styled.View` width: 40px; height: 40px; border-radius: 20px; background-color: ${props => props.theme.colors.primary}; justify-content: center; align-items: center; overflow: hidden; `;
 const AvatarText = styled.Text` color: #fff; font-weight: bold; `;
+const PaddingWrapper = styled.View` padding-horizontal: 20px; `;
 const SectionTitle = styled.Text` font-size: 15px; font-weight: bold; color: ${props => props.theme.colors.textPrimary}; margin-bottom: 10px; `;
 const ActionsRow = styled.View` flex-direction: row; gap: 10px; margin-bottom: 20px; `;
 const QuickBtn = styled.TouchableOpacity` flex: 1; height: 42px; border-radius: 6px; flex-direction: row; align-items: center; justify-content: center; gap: 6px; `;
@@ -372,7 +450,7 @@ const QuickBtnText = styled.Text` color: #fff; font-weight: bold; font-size: 13p
 const BoardHeaderRow = styled.View` flex-direction: row; justify-content: space-between; align-items: center; margin-bottom: 5px; `;
 const AddColumnBtn = styled.TouchableOpacity` flex-direction: row; align-items: center; gap: 4px; `;
 const AddColumnBtnText = styled.Text` color: #0079BF; font-weight: bold; font-size: 13px; `;
-const ColumnContainer = styled.View` width: 280px; background-color: #EBECF0; margin-right: 15px; border-radius: 8px; padding: 12px; max-height: 450px; `;
+const ColumnContainer = styled.View` width: 280px; background-color: #EBECF0; margin-right: 15px; border-radius: 8px; padding: 12px; max-height: 440px; `;
 const ColumnHeader = styled.View` flex-direction: row; justify-content: space-between; align-items: center; margin-bottom: 12px; `;
 const ColumnTitleRow = styled.View` flex-direction: row; align-items: center; gap: 8px; `;
 const ColumnTitle = styled.Text` font-size: 14px; font-weight: bold; color: #172B4D; `;
