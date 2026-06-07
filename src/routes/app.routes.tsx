@@ -30,16 +30,16 @@ function MainTabs() {
         tabBarInactiveTintColor: theme.colors.placeholder, 
         
         //  CUSTOMIZAÇÃO DA BARRA:
-     // 🌟 CUSTOMIZAÇÃO DA BARRA UNIFICADA (IGUAL NO ANDROID E IPHONE):
+     //  CUSTOMIZAÇÃO DA BARRA UNIFICADA (IGUAL NO ANDROID E IPHONE):
         tabBarStyle: {
           backgroundColor: theme.colors.surface, // Fundo escuro/marinho do seu tema
           borderTopWidth: 1,
           borderTopColor: theme.colors.border, // Linha fina divisória superior
           
-          // 🌟 Altura fixada no valor do iPhone para ambos os sistemas
+          //  Altura fixada no valor do iPhone para ambos os sistemas
           height: 88, 
           paddingTop: 8,
-          // 🌟 Espaçamento inferior fixado para empurrar os ícones para cima igualmente
+          //  Espaçamento inferior fixado para empurrar os ícones para cima igualmente
           paddingBottom: 28, 
           
           // Sombra leve para dar efeito de elevação física

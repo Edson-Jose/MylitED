@@ -4,8 +4,8 @@ import { FlatList, Modal, Alert, TouchableOpacity, ScrollView, KeyboardAvoidingV
 import styled from 'styled-components/native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker'; 
-import { useAuthStore } from '../../hooks/useAuthStore';
-import { Task, TaskPriority } from '../../types/task';
+import { useAuthStore } from '../hooks/useAuthStore';
+import { Task, TaskPriority } from '../types/task';
 
 export default function Home() {
   const { 

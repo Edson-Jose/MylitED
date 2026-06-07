@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FlatList, Alert, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components/native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '../../hooks/useAuthStore';
+import { useAuthStore } from '../hooks/useAuthStore';
 
 interface DayItem {
   dayName: string;   // Ex: "Seg"

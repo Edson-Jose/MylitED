@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { FlatList, Modal, Alert, TouchableOpacity, ScrollView, Share, KeyboardAvoidingView, Platform } from 'react-native';
 import styled from 'styled-components/native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '../../hooks/useAuthStore';
-import { Note } from '../../types/note';
+import { useAuthStore } from '../hooks/useAuthStore';
+import { Note } from '../types/note';
 
 const NOTE_COLORS = ['#FFF9DB', '#E2FCEF', '#E6FCFF', '#FCE8E6', '#F3E8FF'];
 

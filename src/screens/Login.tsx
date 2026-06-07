@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Alert, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import styled from 'styled-components/native';
-import { useAuthStore } from '../../hooks/useAuthStore';
+import { useAuthStore } from '../hooks/useAuthStore';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 
