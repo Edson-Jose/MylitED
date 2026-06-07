@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { FlatList, Modal, Alert, TouchableOpacity, ScrollView, Share, KeyboardAvoidingView, Platform } from 'react-native';
 import styled from 'styled-components/native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context'; // Injeção do Hook correto
 import { useAuthStore } from '../hooks/useAuthStore';
 import { Note } from '../types/note';
 
@@ -18,6 +19,9 @@ export default function Notes() {
   const [noteContent, setNoteContent] = useState('');
   const [noteTargetDate, setNoteTargetDate] = useState('');
   const [selectedColor, setSelectedColor] = useState(NOTE_COLORS[0]);
+
+  // Captura dinâmica do espaçamento superior seguro do aparelho
+  const insets = useSafeAreaInsets();
 
   const handleShareNote = async (note: Note) => {
     try {
@@ -74,7 +78,8 @@ export default function Notes() {
   );
 
   return (
-    <Container>
+    // Repassa o valor do topo seguro calculado dinamicamente
+    <Container topInset={insets.top}>
       <HeaderRow>
         <TitleText>Minhas Notas</TitleText>
         <AddButton onPress={handleNewNote}>
@@ -169,9 +174,11 @@ export default function Notes() {
   );
 }
 
-// Estilos originais preservados
-const Container = styled.SafeAreaView` flex: 1; background-color: ${(props) => props.theme.colors.background}; `;
-const HeaderRow = styled.View` flex-direction: row; justify-content: space-between; align-items: center; padding-horizontal: 24px; padding-top: 20px; margin-bottom: 16px; `;
+// Estilos Atualizados para controle perfeito de status bar
+const Container = styled.View<{ topInset: number }>` flex: 1; background-color: ${(props) => props.theme.colors.background}; padding-top: ${(props) => props.topInset}px; `;
+const HeaderRow = styled.View` flex-direction: row; justify-content: space-between; align-items: center; padding-horizontal: 24px; padding-top: 12px; margin-bottom: 16px; `;
+
+// O restante dos estilos permanece preservado abaixo
 const TitleText = styled.Text` font-size: 24px; font-weight: bold; color: ${(props) => props.theme.colors.textPrimary}; `;
 const AddButton = styled.TouchableOpacity` width: 40px; height: 40px; border-radius: 20px; background-color: ${(props) => props.theme.colors.primary}; justify-content: center; align-items: center; `;
 const SearchContainer = styled.View` flex-direction: row; align-items: center; background-color: ${(props) => props.theme.colors.surface}; margin-horizontal: 24px; padding-horizontal: 12px; height: 44px; border-radius: 8px; border-width: 1px; border-color: ${(props) => props.theme.colors.border}; margin-bottom: 16px; gap: 8px; `;

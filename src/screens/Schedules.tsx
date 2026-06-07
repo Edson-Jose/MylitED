@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { FlatList, Alert, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components/native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context'; // Injeção do Hook correto
 import { useAuthStore } from '../hooks/useAuthStore';
 
 interface DayItem {
-  dayName: string;   // Ex: "Seg"
-  dayNumber: string; // Ex: "25"
-  fullDate: string;  // Ex: "25/05/2026"
+  dayName: string;   
+  dayNumber: string; 
+  fullDate: string;  
   isToday: boolean;
 }
 
@@ -15,6 +16,9 @@ export default function Schedules() {
   const { schedules, deleteSchedule } = useAuthStore();
   const [weeklyDays, setWeeklyDays] = useState<DayItem[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toLocaleDateString('pt-BR'));
+
+  // Captura dinâmica do espaçamento superior seguro do aparelho
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     generateCurrentWeek();
@@ -48,7 +52,7 @@ export default function Schedules() {
       { 
         text: 'Remover', 
         style: 'destructive',
-        onPress: () => deleteSchedule(id) // Agora deleta globalmente no Firebase
+        onPress: () => deleteSchedule(id) 
       }
     ]);
   };
@@ -62,7 +66,8 @@ export default function Schedules() {
   });
 
   return (
-    <Container>
+    // Repassa o valor do topo seguro calculado dinamicamente
+    <Container topInset={insets.top}>
       <HeaderContainer>
         <TitleText>Minha Agenda</TitleText>
         <DateText>{todayLabel.charAt(0).toUpperCase() + todayLabel.slice(1)}</DateText>
@@ -146,9 +151,11 @@ export default function Schedules() {
   );
 }
 
-// Estilos originais mantidos intactos
-const Container = styled.SafeAreaView` flex: 1; background-color: ${(props) => props.theme.colors.background}; `;
-const HeaderContainer = styled.View` padding-horizontal: 24px; padding-top: 20px; margin-bottom: 12px; `;
+// Estilos Atualizados para controle perfeito de status bar
+const Container = styled.View<{ topInset: number }>` flex: 1; background-color: ${(props) => props.theme.colors.background}; padding-top: ${(props) => props.topInset}px; `;
+const HeaderContainer = styled.View` padding-horizontal: 24px; padding-top: 12px; margin-bottom: 12px; `;
+
+// O restante dos estilos originais mantidos intactos abaixo
 const TitleText = styled.Text` font-size: 24px; font-weight: bold; color: ${(props) => props.theme.colors.textPrimary}; `;
 const DateText = styled.Text` font-size: 13px; color: ${(props) => props.theme.colors.textSecondary}; margin-top: 2px; `;
 const AgendaSectionTitle = styled.Text` font-size: 14px; font-weight: bold; color: ${(props) => props.theme.colors.textPrimary}; margin-horizontal: 24px; margin-top: 16px; margin-bottom: 8px; `;
